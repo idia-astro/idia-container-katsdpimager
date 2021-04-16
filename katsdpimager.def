@@ -6,7 +6,7 @@ Include: software-properties-common
 %labels
 
     	APPLICATION_NAME Ubuntu LTS + Nvidia CUDA + katsdpimager
-    	OS_VERSION 18.04 + 10.0 
+    	OS_VERSION 18.04 + 11.0.3 
     	APPLICATION_URL https://developer.nvidia.com/cuda-zone 
 
     	SYSTEM_NAME iLifu
@@ -65,9 +65,12 @@ Include: software-properties-common
 		apt-get update -y
 		apt-get install -y libhdf5-dev libeigen3-dev libboost-dev libboost-date-time-dev libboost-filesystem-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev cmake g++
 		
+		# Install pip and base packages
 		apt-get install -y python3-pip
 		pip3 install --upgrade pip
 		pip3 install --upgrade scipy astropy pandas matplotlib numpy ipython
+		
+		# Install katsdpimager https://katsdpimager.readthedocs.io/en/latest/user.html#binary-installation
 		pip3 install 'katsdpimager[katdal,ms]'
 		
         # Clean Up
