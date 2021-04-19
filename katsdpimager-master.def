@@ -1,0 +1,89 @@
+Bootstrap: debootstrap
+MirrorURL: http://ftp.leg.uct.ac.za/ubuntu/
+OSVersion: bionic
+Include: software-properties-common
+
+%labels
+
+    	APPLICATION_NAME Ubuntu LTS + Nvidia CUDA + katsdpimager
+    	OS_VERSION 18.04 + 11.0.3 
+    	APPLICATION_URL https://developer.nvidia.com/cuda-zone 
+
+    	SYSTEM_NAME iLifu
+    	SYSTEM_SINGULARITY_VERSION 2.6
+    	SYSTEM_URL http://www.ilifu.ac.za
+
+    	AUTHOR_NAME Jeremy Smith
+    	AUTHOR_EMAIL jeremy@idia.ac.za
+
+%environment
+
+    	# Set system locale
+    	export LC_ALL=C
+    
+    	# Nvidia CUDA Path
+    	export CPATH="/usr/local/cuda/include:$CPATH"
+    	export PATH="/usr/local/cuda/bin:$PATH"
+    	export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
+    	export CUDA_HOME="/usr/local/cuda"
+
+%post
+
+    	##############################################################################
+    	# Setting up Environment  
+    	
+		# Nvidia CUDA Path
+    	export CPATH="/usr/local/cuda/include:$CPATH"
+   		export PATH="/usr/local/cuda/bin:$PATH"
+    	export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
+    	export CUDA_HOME="/usr/local/cuda"
+
+		# Fix command prompt in Singularity 3.5.2
+        printf 'export PS1="\u@$SINGULARITY_NAME:\w$ "' > /.singularity.d/env/999-psvars.sh
+    	###############################################################################
+
+    	# Declare variables for downloaded applications
+    	export CUDA_FILENAME=cuda_11.0.3_450.51.06_linux.run
+		export NVIDIA_DEV_URL=http://developer.download.nvidia.com/compute
+
+   	 	# Update Ubuntu Cache and begin install 
+    	apt update -y
+    	apt install -y wget gcc libxml2 curl gpg-agent build-essential apt-utils apt-transport-https git vim
+
+    	# Download NVIDIA Cuda and begin install 
+    	#wget --no-check-certificate https://developer.nvidia.com/compute/cuda/10.0/Prod/local_installers/${CUDA_FILENAME}
+		wget https://developer.download.nvidia.com/compute/cuda/11.0.3/local_installers/${CUDA_FILENAME}
+    	chmod +x ${CUDA_FILENAME}
+    	./${CUDA_FILENAME} --toolkit --silent --no-drm --no-man-page --override
+   	
+ 		# Download and install Nvidia Cudnn 7 and nccl2
+		wget --no-check-certificate ${NVIDIA_DEV_URL}/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
+    	dpkg -i nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
+    	apt-key adv --fetch-keys ${NVIDIA_DEV_URL}/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
+    	apt update -y 
+    	apt install -y libc-ares-dev libcudnn7 libnccl2 libcudnn7-dev
+
+		# Packages
+		apt-add-repository -y universe
+		apt-get update -y
+		apt-get install -y libhdf5-dev libeigen3-dev libboost-dev libboost-date-time-dev libboost-filesystem-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev cmake g++
+		
+		# Install pip and base packages
+		apt-get install -y python3-pip
+		pip3 install --upgrade pip
+		pip3 install --upgrade scipy astropy pandas matplotlib numpy ipython
+		
+		# Install katsdpimager https://katsdpimager.readthedocs.io/en/latest/user.html#binary-installation
+		cd /opt
+		git clone https://github.com/ska-sa/katsdpimager.git
+		cd katsdpimager
+		python3 ./setup.py clean
+		pip3 install --no-deps .[ms,katdal,pipeline]
+		#pip3 install 'katsdpimager[katdal,ms]'
+		
+        # Clean Up
+        apt-get clean
+        apt-get autoclean
+        apt-get autoremove -y
+        rm -rf "/.cache" "/root/.cache"
+        rm /${CUDA_FILENAME}
