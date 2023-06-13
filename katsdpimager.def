@@ -37,6 +37,9 @@ Include: software-properties-common
    		export PATH="/usr/local/cuda/bin:$PATH"
     	export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
     	export CUDA_HOME="/usr/local/cuda"
+
+		# Fix command prompt in Singularity 3.5.2
+        printf 'export PS1="\u@$SINGULARITY_NAME:\w$ "' > /.singularity.d/env/999-psvars.sh
     	###############################################################################
 
     	# Declare variables for downloaded applications
